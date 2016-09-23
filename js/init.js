@@ -5,6 +5,7 @@
     var urlInteractions = 'https://raw.githubusercontent.com/alexandre-gauge/frontend_data/master/interactions.json';
     var urlUsers = 'https://raw.githubusercontent.com/alexandre-gauge/frontend_data/master/users.json';
     var urlBrands = 'https://raw.githubusercontent.com/alexandre-gauge/frontend_data/master/brands.json';
+    var currentMode = 'table';
 
     $.get('templates/list.html', function(data){
         $('div#template').html(data);
@@ -12,7 +13,6 @@
     });
 
     function start(){
-      $('select').material_select();
       $.getJSON(urlUsers, function(data){ setUsers(data) });
     }
 
@@ -27,35 +27,36 @@
     /** Principal Function **/
     function setData(users, interactions, brands){
       var totalInteractions = interactions.length;
-      users = countInteractionsByUser(users, interactions);
-      users = sortUsers(users);
       var brands = setBrands(brands);
-      appendUsers(users, brands);
+      itens = countInteractions(users, interactions, brands);
+      users = sortUsers(itens.users);
+      appendUsers(itens.users, itens.brands);
       $('.progress').addClass('hide');
     }
 
     function setBrands(brands){
       imagesBrands = [];
       $(brands).each(function(index, brand){
-        brands[brand.id] = {image : brand.image, name: brand.name};
+        brands[brand.id] = {image : brand.image, name: brand.name, interactions: 0};
       });
       return brands;
     }
 
-    function countInteractionsByUser(users, interactions){
+    function countInteractions(users, interactions, brands){
       $(users).each(function(indexUser, user){
         user.totalInteractions = 0;
         user.interactions = [];
         $(interactions).each(function(indexInteaction, interaction){
             if(user.id == interaction.user){
               user.totalInteractions++;
-              var interaction = {brand: interaction.brand, type: interaction.type};
-              user.interactions.push(interaction);
+              user.interactions.push({brand: interaction.brand, type: interaction.type});
+              brands[interaction.brand].interactions++;
             }
         });
         users[indexUser] = user;
       });
-      return users;
+      var itens = {users: users, brands: brands};
+      return itens;
     }
 
     function sortUsers(users){
@@ -85,9 +86,10 @@
 
       $(ul).find('li').eq(0).remove();
       $("div#principal").html(ul);
-      //$("ul#nav-mobile").remove();
+      $("ul#nav-mobile").remove();
       $('.progress').addClass('hide');
       setDataTable();
+      createPieChart(brands);
     }
 
     function mountItem(li, user, brands){
@@ -129,6 +131,30 @@
 
     function setDataTable(){
       $('table.interactions').DataTable();
+    }
+
+    function createPieChart(brands){
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+      function drawChart() {
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Task');
+        data.addColumn('number', 'Hours per Day');
+
+        $(brands).each(function(index, brand){
+          data.addRows([
+            [brand.name, brand.interactions],
+          ]);
+        });
+
+        var options = {
+          title: 'Interações com marcas'
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+        chart.draw(data, options);
+      }
     }
 
   }); // end of document ready

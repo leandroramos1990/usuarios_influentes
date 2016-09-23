@@ -17,6 +17,10 @@
   display: none;
 }
 
+.container{
+  padding-top: 10px;
+}
+
 .collapsible-header {
     background-color: #29b6f6;
     color: white;
@@ -33,4 +37,8 @@
 
 .collapsible-body ul li i{
   color: #ef9004;
+}
+
+div#chart{
+  float: right;
 }
